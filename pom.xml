@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>services.tangxin.mysqls</groupId>
     <artifactId>mysqls-java</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>a tool for building sql</description>
     <url>https://www.tangxin.services</url>
@@ -23,7 +23,7 @@
         <connection>scm:git:https://github.com/blackteam-xingyu/mysqls-java.git</connection>
         <developerConnection>scm:git:https://github.com/blackteam-xingyu/mysqls-java.git</developerConnection>
         <url>https://github.com/blackteam-xingyu/mysqls-java/src</url>
-        <tag>mysqls-java-1.0.0</tag>
+        <tag>mysqls-java-1.0.1</tag>
     </scm>
     <build>
         <plugins>
