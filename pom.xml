@@ -20,9 +20,9 @@
         </developer>
     </developers>
     <scm>
-        <connection>scm:git:git@github.com:blackteam-xingyu/mysqls-java.git</connection>
-        <developerConnection>scm:git:ssh://github.com:blackteam-xingyu/mysqls-java.git</developerConnection>
-        <url>https://github.com/blackteam-xingyu/mysqls-java/src/java</url>
+        <connection>scm:git:https://github.com/blackteam-xingyu/mysqls-java.git</connection>
+        <developerConnection>scm:git:https://github.com/blackteam-xingyu/mysqls-java.git</developerConnection>
+        <url>https://github.com/blackteam-xingyu/mysqls-java/src</url>
         <tag>mysqls-java-1.0.0</tag>
     </scm>
     <build>
