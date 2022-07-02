@@ -1,4 +1,4 @@
-package org.xingyu.mysqls;
+package services.tangxin.mysqls;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -26,15 +26,15 @@ public class Uitl {
             }
             if (opt.get(key) instanceof JSONObject) {
                 if (i == keys.size() - 1 - number) {
-                    result += checkOptObjType(key, (JSONObject) opt.get(key));
+                    result += checkOptObjTypeObj(key, (JSONObject) opt.get(key));
                 } else {
-                    result += checkOptObjType(key, (JSONObject) opt.get(key)) + " " + type;
+                    result += checkOptObjTypeObj(key, (JSONObject) opt.get(key)) + " " + type;
                 }
             } else {
                 if (i == keys.size() - 1 - number) {
-                    result += key + "=" + checkOptObjType(key, opt.get(key));
+                    result += key + "=" + checkOptObjTypeObj(key, opt.get(key));
                 } else {
-                    result += key + "=" + checkOptObjType(key, opt.get(key)) + " " + type;
+                    result += key + "=" + checkOptObjTypeObj(key, opt.get(key)) + " " + type;
                 }
             }
         }
@@ -120,8 +120,8 @@ public class Uitl {
         }
         return result;
     }
-
-    public static String checkOptObjType(String pre_key, Object val) {
+    public static String checkOptObjTypeObj(String pre_key, Object val) {
+        System.out.println(val.getClass());
         String result = "";
         if (val instanceof JSONObject) {
             JSONObject newVal = (JSONObject) val;
@@ -130,6 +130,41 @@ public class Uitl {
                     newVal.containsKey("_type") && newVal.getString("_type").trim().length() > 0 ? 1 : 0;
             for (int i = 0; i < keys.size(); i++) {
                 final String key = keys.get(i);
+                if (key == "_type") {
+                    continue;
+                }
+                String type =
+                        newVal.containsKey("_type") && newVal.getString("_type").length() > 0
+                                ? newVal.getString("_type")
+                                : "AND ";
+                result +=
+                        expressionQuery(
+                                pre_key,
+                                key,
+                                newVal.getString(key),
+                                type.toUpperCase(),
+                                i == keys.size() - 1 - number);
+            }
+        } else if (val instanceof String) {
+            result = (String) val;
+        } else {
+            result = String.valueOf(val);
+        }
+        return result;
+    }
+    public static String checkOptObjType(String pre_key, Object val) {
+        System.out.println(val.getClass());
+        String result = "";
+        if (val instanceof JSONObject) {
+            JSONObject newVal = (JSONObject) val;
+            ArrayList<String> keys = new ArrayList<>(newVal.keySet());
+            int number =
+                    newVal.containsKey("_type") && newVal.getString("_type").trim().length() > 0 ? 1 : 0;
+            for (int i = 0; i < keys.size(); i++) {
+                final String key = keys.get(i);
+                if (key == "_type") {
+                    continue;
+                }
                 String type =
                         newVal.containsKey("_type") && newVal.getString("_type").length() > 0
                                 ? newVal.getString("_type")

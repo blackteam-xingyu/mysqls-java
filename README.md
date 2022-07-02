@@ -1,0 +1,179 @@
+# MYSQL-JAVA
+mysqls-java 是一款mysql语句的生成插件。支持链式调用与直接使用json字符串生成mysql的sql语句。同时支持生成sql语句后直接调用，兼容了druid的连接池，支持事务调用。
+* maven地址：https://repo1.maven.org/maven2/services/tangxin/mysqls
+* 算法参考项目：https://github.com/wangweianger/mysqls
+
+## 安装
+
+```xml
+<dependency>
+    <groupId>services.tangxin.mysqls</groupId>
+    <artifactId>mysqls-java</artifactId>
+    <version>1.0.1</version>
+</dependency>
+```
+
+## 核心类
+> * MySQLS：  MySQLS插件的核心类，一切的使用都是根据此类生成的对象。
+> * Config：  MySQLS插件的配置类，用于初始化时的配置，可以被配置文件取代
+
+## 核心方法
+> * init：  初始化配置方法，如果需要用该插件直接请求数据库则需要调用。如果仅需生成sql语句，则无需调用。
+> * exec：  运行方法，当插件使用init正确初始化配置后，可以使用此方法直接运行。
+> * transaction：  事务处理方法，当用此插件直接调用sql语句时，可以用该方法处理事务。因为事务中的select在业务层面意义不大，所以，该事务处理方法调用成功时没有返回值。
+
+## 插件使用
+### 1、生成对象使用
+
+```java
+import MySQLS;
+
+class TryMySQLS {
+//...
+    void try()
+
+    {
+        MySQLS sql = new MySQLS();
+        String sqlReq = sql.table("user").select();//生成sql语句
+        System.out.println("生成的sql语句为:" + sqlReq);
+        //生成的sql语句为:SELECT  * FROM user 
+    }
+//...
+}
+```
+### 2、在Spring/SpringBoot中整合（推荐）
+* 这里只介绍纯注解开发
+```java
+//新建一个MySQLConfig.java或者直接写入您的配置类中
+//MySQLSConfig.java
+@Configuration
+public class MySQLSConfig {
+    @Bean
+    public MySQLS MySQLS() {
+        return new MySQLS();
+    }
+}
+//UserController.java
+@Slf4j
+@Controller
+public class UserController{
+//...
+	@Resource(name = "MySQLS")
+    private MySQLS sql;
+    public void testMysqls() {
+        log.info(sql.table("user").select());
+//2022-07-03 02:59:43.207 -- [main] INFO com.******.***.UserController.testMysqls - SELECT  * FROM user 
+//...
+    }
+}
+```
+因为spring Bean容器的特性，只会在项目初始化的时候执行一次new。此后Bean使用的是同一个地址内的对象，所以仅仅调用一次init方法就可以完成所有的业务。避免了需要访问数据库时反复调用init方法初始化所造成的性能损耗。
+
+## mysqls配置初始化
+> 无需使用该插件直接调用数据库的使用者，请直接跳过该步骤。
+### 1、使用Config类
+```java
+class TryMySQLS{
+//...
+	void try(){
+		Config config = new Config();
+		//（必填）设置sql驱动，以后或许会兼容其他数据库，目前虽然仅完美支持mysql，但是如果sql语句不冲突，直接加载其他关系型数据库的的驱动也是可以使用的。冲突的语句可以在其后直接调用query(String sql)方法硬编码sql语句解决。
+		config.setDriveClassName("com.mysql.cj.jdbc.Driver");
+		//（选填）配置连接池，目前仅兼容alibaba的druid连接池，需要单独安装，不久将会提供其他连接池。如果不配置就不使用连接池
+		config.setType("com.alibaba.druid.pool.DruidDataSource");
+		//（必填）配置数据库用户名
+		config.setUsername("username");
+		//（必填）配置数据库密码
+		config.setPassword("password");
+		//（必填）配置数据库地址
+		config.setUrl("jdbc:mysql://localhost:3306/TEST?serverTimezone=UTC");
+		Mysql sql = new Mysql();
+		sql.init(config.config);//初始化配置
+	}
+//...
+}
+```
+将数据库配置硬编码在代码里是一个不合适的编程习惯，如果需要动态改变驱动之类的配置时可以斟酌使用此方法。但对外公开项目中请勿硬编码数据库用户名密码和地址信息！！！
+### 2、使用配置文件方式（推荐）
+配置文件参数说明
+> driver-class-name:       数据库驱动类
+> type:							   连接池（DruidDataSource）
+> username:					 数据库用户名
+> password:					  数据库密码
+> url:				                  数据库连接地址
+
+> 支持直接配置在springboot的application.yml或者application.properties中
+```yml
+#application.yml（和mybatis同款配置）
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    username: my_username
+    password: my_password
+    url: jdbc:mysql://localhost:3306/TEST?serverTimezone=UTC
+```
+``` properties
+#application.properties（和mybatis同款配置）
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
+spring.datasource.username=my_username
+spring.datasource.password=my_password
+spring.datasource.url=jdbc:mysql://localhost:3306/TEST?serverTimezone=UTC
+```
+>如果单独配置，请在resources文件夹下新建一个mysqls.yml或者mysql.properties
+```yml
+#mysqls.yml
+datasource:
+  driver-class-name: com.mysql.cj.jdbc.Driver
+  type: com.alibaba.druid.pool.DruidDataSource
+  username: my_username
+  password: my_password
+  url: jdbc:mysql://localhost:3306/TEST?serverTimezone=UTC
+```
+``` properties
+#mysqls.properties
+datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+datasource.type=com.alibaba.druid.pool.DruidDataSource
+datasource.username=my_username
+datasource.password=my_password
+datasource.url=jdbc:mysql://localhost:3306/TEST?serverTimezone=UTC
+```
+* xml配置方式后续会开发支持，目前暂不支持xml配置，所以spring框架而非springboot的使用者请用mysql.yml或者mysql.properties的方式配置
+> 在配置好配置文件后需要调用init方法，当然spring/springboot开发者可以在Bean的配置类完成
+```java
+//MySQLSConfig.java
+@Configuration
+public class MySQLSConfig {
+    @Bean
+    public MySQLS MySQLS() {
+        MySQLS mysqls = new MySQLS();
+        //以下两种方式使用其一即可
+        //1、手动根据文件生成配置，需要动态配置时可使用
+        Config dynamic_config = new Config(true);
+        //dynamic_config.setType
+        mysqls.init(dynamic_config.config);
+        //2、自动生成配置
+        mysqls.init();
+        //将初始化后的对象挂载到Bean
+        return mysqls;
+    }
+}
+```
+
+## 只生成sql语句案例
+```java
+//UserController.java
+@Slf4j
+@Controller
+public class UserController{
+//...
+	@Resource(name = "MySQLS")
+    private MySQLS sql;
+    public void testMysqls() {
+    log.info(sql.table("user").select());
+//2022-07-03 02:59:43.207 -- [main] INFO com.******.***.UserController.testMysqls - SELECT  * FROM user 
+//...
+    }
+}
+```

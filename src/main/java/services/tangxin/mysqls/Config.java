@@ -1,4 +1,4 @@
-package org.xingyu.mysqls;
+package services.tangxin.mysqls;
 
 import com.alibaba.fastjson.JSONObject;
 import lombok.Getter;

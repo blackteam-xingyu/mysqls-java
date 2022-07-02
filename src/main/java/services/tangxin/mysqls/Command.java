@@ -1,10 +1,10 @@
-package org.xingyu.mysqls;
+package services.tangxin.mysqls;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
-import static org.xingyu.mysqls.Uitl.getOptToString;
-import static org.xingyu.mysqls.Uitl.sortSelectSql;
+import static services.tangxin.mysqls.Uitl.getOptToString;
+import static services.tangxin.mysqls.Uitl.sortSelectSql;
 
 public class Command {
     public JSONObject sqlObj = new JSONObject();
@@ -55,14 +55,14 @@ public class Command {
 
     public Command where(JSONObject whereOpt) {
         String result;
-        result = getOptToString(whereOpt);
+        result = Uitl.getOptToString(whereOpt);
         this.sqlObj.put("where", result);
         return this;
     }
 
     public Command where(JSONArray whereOpt) {
         String result;
-        result = getOptToString(whereOpt);
+        result = Uitl.getOptToString(whereOpt);
         this.sqlObj.put("where", result);
         return this;
     }
@@ -456,9 +456,9 @@ public class Command {
                 " "
                         + joinOpt.getString("dir").toUpperCase()
                         + " JOIN "
-                        + sortSelectSql(joinOpt.getJSONObject("table"), true).getString("result")
+                        + Uitl.sortSelectSql(joinOpt.getJSONObject("table"), true).getString("result")
                         + " ON "
-                        + getOptToString(joinOpt.getJSONObject("where"));
+                        + Uitl.getOptToString(joinOpt.getJSONObject("where"));
         this.sqlObj.put("join", result);
         return this;
     }
@@ -476,9 +476,9 @@ public class Command {
                     " "
                             + joinOpt.getString("dir").toUpperCase()
                             + " JOIN "
-                            + sortSelectSql(joinOpt.getJSONObject("table"), true).getString("result")
+                            + Uitl.sortSelectSql(joinOpt.getJSONObject("table"), true).getString("result")
                             + " ON "
-                            + getOptToString(joinOpt.getJSONObject("where"));
+                            + Uitl.getOptToString(joinOpt.getJSONObject("where"));
         }
         this.sqlObj.put("join", result);
         return this;
