@@ -1,0 +1,5 @@
+/src/main/resources
+/target/classes/application.yml
+/.idea
+/target
+/test
