@@ -174,8 +174,8 @@ public class MySQLSConfig {
 //...
 String json = "{'id':1}";
 //链式调用生成sql语句
-String sql = sql.table("user").field("id,name").where(Obj(json)).select();
-log.info(sql);
+String sqlStr = sql.table("user").field("id,name").where(Obj(json)).select();
+log.info(sqlStr);
 /*2022-07-03 16:05:41.395 -- [main] INFO  com.spring.mytest.MytestApplicationTests.testMysqls - 
 SELECT  id,name FROM user WHERE id=1*/  
 //...
@@ -185,8 +185,9 @@ SELECT  id,name FROM user WHERE id=1*/
 ```java
 //...
 String json = "{'id':1}";
+String sqlStr=sql.table("user").field("id,name").where(Obj(json)).select();
 //调用exec执行语句返回查询结果
-String sql=sql.table("user").field("id,name").where(Obj(json)).select();sql.exec(sql);
+sql.exec(sqlStr);
 //...
 ```
 
@@ -207,7 +208,6 @@ sql.transaction(sql1,sql2);
 
 **查询**
 ```java
-MySQLS sql = new MySQLS();
 sql
 	.table('user')
 	.field('id,name')
@@ -218,7 +218,6 @@ sql
 
 **插入**
 ```java
-MySQLS sql = new MySQLS();
 sql
     .table('user')
     .data(Obj("{'name':'zhangsan','email':'fwkt@qq.com'}"))
@@ -255,7 +254,8 @@ sql
 
 **删除**
 ```java
-sql .table('user')
+sql 
+	.table('user')
     .where(Obj("{'name':'zhangsan'}"))
     .delet();
 
