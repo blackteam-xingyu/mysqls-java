@@ -21,6 +21,8 @@ mysqls-java 是一款mysql语句的生成插件。支持链式调用与直接使
 > * init：  初始化配置方法，如果需要用该插件直接请求数据库则需要调用。如果仅需生成sql语句，则无需调用。
 > * exec：  运行方法，当插件使用init正确初始化配置后，可以使用此方法直接运行。
 > * transaction：  事务处理方法，当用此插件直接调用sql语句时，可以用该方法处理事务。因为事务中的select在业务层面意义不大，所以，该事务处理方法调用成功时没有返回值。
+> * Obj：  static转换方法，将String类型转化为JSONObject类型
+> * Arr：  static转换方法，将String类型转化为JSONArray类型
 
 ## 插件使用
 
@@ -91,6 +93,8 @@ class TryMySQLS{
 		config.setUrl("jdbc:mysql://localhost:3306/TEST?serverTimezone=UTC");
 		Mysql sql = new Mysql();
 		sql.init(config.config);//初始化配置
+		//...
+		sql.close();//使用结束后记得关闭连接，如果使用spring的Bean可以将写入Bean的生命周期销毁
 	}
 //...
 }
@@ -142,7 +146,7 @@ datasource.password=my_password
 datasource.url=jdbc:mysql://localhost:3306/TEST?serverTimezone=UTC
 ```
 * xml配置方式后续会开发支持，目前暂不支持xml配置，所以spring框架而非springboot的使用者请用mysql.yml或者mysql.properties的方式配置
-> 在配置好配置文件后需要调用init方法，当然spring/springboot开发者可以在Bean的配置类完成
+> 在配置好配置文件后需要调用init方法，当然spring/springboot开发者也可以在Bean的配置类完成
 ```java
 //MySQLSConfig.java
 @Configuration
@@ -164,13 +168,13 @@ public class MySQLSConfig {
 ```
 
 ## 典型案例
-> 本插件所有与JSON有关语句都由阿里的fastjson插件实现，包里已自带插件依赖。如果不喜欢JSON语句也可以选择直接使用sql语句的字符串。详情可参考文档。
+> 本插件所有与JSON有关语句转换功能都由阿里的fastjson插件实现，包里已自带插件依赖。如果不喜欢JSON语句也可以选择直接使用sql语句的字符串。详情可参考文档。
 ### 只生成sql语句案例
 ```java
 //...
 String json = "{'id':1}";
 //链式调用生成sql语句
-String sql = sql.table("user").field("id,name").where(JSONObject.parseObject(json)).select();
+String sql = sql.table("user").field("id,name").where(Obj(json)).select();
 log.info(sql);
 /*2022-07-03 16:05:41.395 -- [main] INFO  com.spring.mytest.MytestApplicationTests.testMysqls - 
 SELECT  id,name FROM user WHERE id=1*/  
@@ -182,7 +186,7 @@ SELECT  id,name FROM user WHERE id=1*/
 //...
 String json = "{'id':1}";
 //调用exec执行语句返回查询结果
-String sql=sql.table("user").field("id,name").where(JSONObject.parseObject(json)).select();sql.exec(sql);
+String sql=sql.table("user").field("id,name").where(Obj(json)).select();sql.exec(sql);
 //...
 ```
 
@@ -191,15 +195,15 @@ String sql=sql.table("user").field("id,name").where(JSONObject.parseObject(json)
 //...
 String json = "{'id':1}";
 //生成sql语句
-String sql1= sql.table('table1').data(JSONObject.parseObject("{number:'number-5'}")).update();
-String sql2= sql.table('table2').data(JSONObject.parseObject("{number:'number+5'}")).update();
+String sql1= sql.table('table1').data(Obj("{number:'number-5'}")).update();
+String sql2= sql.table('table2').data(Obj("{number:'number+5'}")).update();
 //调用transaction执行事务处理（不定参数，有多少条语句就传多少个参数）
 sql.transaction(sql1,sql2);
 //...
 ```
 
 ### 生成sql语句简单用法
-> sql调用方法的顺序内部已经做了排序，因此可以不按严格的sql语句顺序来写
+> sql调用方法的顺序内部已经做了排序，因此可以不按严格的sql语句顺序来写。但select、insert、update、delete、query这种CRUD开头语句的方法要放在最后写。
 
 **查询**
 ```java
@@ -207,8 +211,8 @@ MySQLS sql = new MySQLS();
 sql
 	.table('user')
 	.field('id,name')
-	.where(JSONObject.parseObject("{'id':1}"))
-	.select()
+	.where(Obj("{'id':1}"))
+	.select();
 //SELECT id,name FROM user WHERE id=1
 ```
 
@@ -217,22 +221,108 @@ sql
 MySQLS sql = new MySQLS();
 sql
     .table('user')
-    .data(JSONObject.parseObject("{'name':'zhangsan','email':'fwkt@qq.com'}"))
-    .insert()
+    .data(Obj("{'name':'zhangsan','email':'fwkt@qq.com'}"))
+    .insert();
 
 //INSERT INTO user (name,email) VALUES (`zhangsan`,`fwkt@qq.com`)
 ```
 
 **批量插入**
 ```java
-JSONArray array = JSONObject.parseArray("["+
-    "{'name':'zhangsan','email':'fwkt@qq.com'}"+
-    "{'name':'luoxiang','email':'xfjs@qq.com'}+
-    "{'name':'houda','email':'fkwz@qq.com'}+
-"]")
+String array = "["+
+    "{'name':'zhangsan','email':'fwkt@qq.com'},"+
+    "{'name':'luoxiang','email':'xfjs@qq.com'},"+
+    "{'name':'houda','email':'fkwz@qq.com'}"+
+"]";
 sql
 	.table("user")
-	.data(array)
-	.insert()
+	.data(Arr(array))
+	.insert();
+
 //INSERT INTO user (name,email) VALUES ('zhangsan','fwkt@qq.com'),('luoxiang','xfjs@qq.com'),('houda','fkwz@qq.com')	
 ```
+
+**更新**
+```java
+sql
+    .table('user')
+    .data(Obj("{'name':'zhangsan','email':'fwkt@qq.com'}"))
+    .where(Obj("{'id':1}"))
+    .update();
+
+//UPDATE user SET name=`zhangsan`,email=`fwkt@qq.com`WHERE id=1
+```
+
+**删除**
+```java
+sql .table('user')
+    .where(Obj("{'name':'zhangsan'}"))
+    .delet();
+
+
+//
+```
+
+### 生成sql语句高级用法
+
+**参数json多字段**
+```java
+sql
+    .table('user')
+    .where(Obj("{'id':1,'name':'zhangsan'}"))
+    .select();
+    
+//SELECT  * FROM user WHERE id=1 AND name='zhangsan'
+```
+
+**参数json数组**
+```java
+String data = "["+
+    "{id:1,name:'zhangsan','_type':'or'},"+
+    "{'sex':1,'number':3}"+
+"]";
+sql.table('user').where(Arr(data)).select();
+//SELECT * FROM user WHERE (id=1 OR name='zhangsan' ) AND (sex=1 AND number=3 )
+```
+
+**多字段连接方式**
+```java
+String data = "["+
+    "{id:1,name:'zhangsan','_type':'or','_nexttype':'or'},"+
+    "{'sex':1,'number':3,'_type':'and'}"+
+"]";
+sql.table('user').where(Arr(data)).select();
+//SELECT * FROM user WHERE (id=1 OR name='zhangsan' ) OR (sex=1 AND number=3 )
+```
+
+**混合查询**
+```java
+String data="[{"+
+    "'id':{'eq':100,'egt':10,'_type':'or'},"+
+    "'name':'zhangshan',"+
+    "'_nexttype':'or'"+
+"},{"+
+    "'status':1,"+
+    "'name':{'like':'%zane%'}"+
+"}]";
+sql.table('user').where(Arr(data)).select();
+//SELECT * FROM user WHERE (((id=100) OR (id>=10)) AND name=`zhangshan`) OR (status=1 AND ((name LIKE `%zane%`))) 
+```
+
+**UNION ， UNION ALL 组合使用**
+```java
+sql
+    .union('SELECT * FROM think_user_1',true)
+    .union('SELECT * FROM think_user_2',true)
+    .union(Arr"['SELECT * FROM think_user_3','SELECT name FROM think_user_4']")
+    .union('SELECT * FROM think_user_5',true)
+    .select();
+    
+/*(SELECT * FROM think_user_1) UNION ALL  
+(SELECT * FROM think_user_2) UNION ALL 
+(SELECT * FROM think_user_3) UNION 
+(SELECT name FROM think_user_4)  UNION  
+(SELECT * FROM think_user_5)*/
+```
+
+* 更多用法请参考详细文档（未完待续）
