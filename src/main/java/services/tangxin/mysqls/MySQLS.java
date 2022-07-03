@@ -64,6 +64,30 @@ public class MySQLS extends CRUD {
         }
     }
 
+    public static JSONObject Obj(String json) {
+        try {
+            if (json.startsWith("{") && json.endsWith("}")) {
+                return JSONObject.parseObject(json);
+            } else {
+                throw new Error("传参不符合json格式");
+            }
+        } catch (Error e) {
+            throw new Error("传参不符合json格式");
+        }
+    }
+
+    public static JSONArray Arr(String json) {
+        try {
+            if (json.startsWith("[") && json.endsWith("]")) {
+                return JSONObject.parseArray(json);
+            } else {
+                throw new Error("传参不符合json格式");
+            }
+        } catch (Error e) {
+            throw new Error("传参不符合json格式");
+        }
+    }
+
     /**
      * 关闭连接
      *

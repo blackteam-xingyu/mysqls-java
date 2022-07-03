@@ -1,7 +1,7 @@
 # MYSQL-JAVA
 mysqls-java 是一款mysql语句的生成插件。支持链式调用与直接使用json字符串生成mysql的sql语句。同时支持生成sql语句后直接调用，兼容了druid的连接池，支持事务调用。
 * maven地址：https://repo1.maven.org/maven2/services/tangxin/mysqls
-* 算法参考项目：https://github.com/wangweianger/mysqls
+* 算法参考项目：https://github.com/wangweianger/mysqls (MIT)
 
 ## 安装
 
@@ -9,7 +9,7 @@ mysqls-java 是一款mysql语句的生成插件。支持链式调用与直接使
 <dependency>
     <groupId>services.tangxin.mysqls</groupId>
     <artifactId>mysqls-java</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
@@ -23,10 +23,11 @@ mysqls-java 是一款mysql语句的生成插件。支持链式调用与直接使
 > * transaction：  事务处理方法，当用此插件直接调用sql语句时，可以用该方法处理事务。因为事务中的select在业务层面意义不大，所以，该事务处理方法调用成功时没有返回值。
 
 ## 插件使用
+
 ### 1、生成对象使用
 
 ```java
-import MySQLS;
+import services.tangxin.mysqls.MySQLS;
 
 class TryMySQLS {
 //...
@@ -69,8 +70,9 @@ public class UserController{
 ```
 因为spring Bean容器的特性，只会在项目初始化的时候执行一次new。此后Bean使用的是同一个地址内的对象，所以仅仅调用一次init方法就可以完成所有的业务。避免了需要访问数据库时反复调用init方法初始化所造成的性能损耗。
 
-## mysqls配置初始化
+## MySQLS配置初始化
 > 无需使用该插件直接调用数据库的使用者，请直接跳过该步骤。
+
 ### 1、使用Config类
 ```java
 class TryMySQLS{
@@ -94,14 +96,14 @@ class TryMySQLS{
 }
 ```
 将数据库配置硬编码在代码里是一个不合适的编程习惯，如果需要动态改变驱动之类的配置时可以斟酌使用此方法。但对外公开项目中请勿硬编码数据库用户名密码和地址信息！！！
+
 ### 2、使用配置文件方式（推荐）
-配置文件参数说明
+> 配置文件参数说明
 > driver-class-name:       数据库驱动类
 > type:							   连接池（DruidDataSource）
 > username:					 数据库用户名
 > password:					  数据库密码
 > url:				                  数据库连接地址
-
 > 支持直接配置在springboot的application.yml或者application.properties中
 ```yml
 #application.yml（和mybatis同款配置）
@@ -161,19 +163,76 @@ public class MySQLSConfig {
 }
 ```
 
-## 只生成sql语句案例
+## 典型案例
+> 本插件所有与JSON有关语句都由阿里的fastjson插件实现，包里已自带插件依赖。如果不喜欢JSON语句也可以选择直接使用sql语句的字符串。详情可参考文档。
+### 只生成sql语句案例
 ```java
-//UserController.java
-@Slf4j
-@Controller
-public class UserController{
 //...
-	@Resource(name = "MySQLS")
-    private MySQLS sql;
-    public void testMysqls() {
-    log.info(sql.table("user").select());
-//2022-07-03 02:59:43.207 -- [main] INFO com.******.***.UserController.testMysqls - SELECT  * FROM user 
+String json = "{'id':1}";
+//链式调用生成sql语句
+String sql = sql.table("user").field("id,name").where(JSONObject.parseObject(json)).select();
+log.info(sql);
+/*2022-07-03 16:05:41.395 -- [main] INFO  com.spring.mytest.MytestApplicationTests.testMysqls - 
+SELECT  id,name FROM user WHERE id=1*/  
 //...
-    }
-}
+```
+
+### 使用exec(String sql)函数执行sql语句
+```java
+//...
+String json = "{'id':1}";
+//调用exec执行语句返回查询结果
+String sql=sql.table("user").field("id,name").where(JSONObject.parseObject(json)).select();sql.exec(sql);
+//...
+```
+
+### 使用transaction(String...sql)处理事务
+```java
+//...
+String json = "{'id':1}";
+//生成sql语句
+String sql1= sql.table('table1').data(JSONObject.parseObject("{number:'number-5'}")).update();
+String sql2= sql.table('table2').data(JSONObject.parseObject("{number:'number+5'}")).update();
+//调用transaction执行事务处理（不定参数，有多少条语句就传多少个参数）
+sql.transaction(sql1,sql2);
+//...
+```
+
+### 生成sql语句简单用法
+> sql调用方法的顺序内部已经做了排序，因此可以不按严格的sql语句顺序来写
+
+**查询**
+```java
+MySQLS sql = new MySQLS();
+sql
+	.table('user')
+	.field('id,name')
+	.where(JSONObject.parseObject("{'id':1}"))
+	.select()
+//SELECT id,name FROM user WHERE id=1
+```
+
+**插入**
+```java
+MySQLS sql = new MySQLS();
+sql
+    .table('user')
+    .data(JSONObject.parseObject("{'name':'zhangsan','email':'fwkt@qq.com'}"))
+    .insert()
+
+//INSERT INTO user (name,email) VALUES (`zhangsan`,`fwkt@qq.com`)
+```
+
+**批量插入**
+```java
+JSONArray array = JSONObject.parseArray("["+
+    "{'name':'zhangsan','email':'fwkt@qq.com'}"+
+    "{'name':'luoxiang','email':'xfjs@qq.com'}+
+    "{'name':'houda','email':'fkwz@qq.com'}+
+"]")
+sql
+	.table("user")
+	.data(array)
+	.insert()
+//INSERT INTO user (name,email) VALUES ('zhangsan','fwkt@qq.com'),('luoxiang','xfjs@qq.com'),('houda','fkwz@qq.com')	
 ```

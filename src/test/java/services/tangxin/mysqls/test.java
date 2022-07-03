@@ -1,7 +1,7 @@
 package services.tangxin.mysqls;
-
-import com.alibaba.fastjson.JSONObject;
 import org.junit.Test;
+import services.tangxin.mysqls.MySQLS;
+import static services.tangxin.mysqls.MySQLS.Obj;
 
 /**
  * @ClassName: test
@@ -14,7 +14,7 @@ public class test {
     public void mysql() {
         MySQLS sql = new MySQLS();
         String json = "{'id':1,'name':'user'}";
-        System.out.println(sql.table("user").field("id,name").where(JSONObject.parseObject(json)).select());
+        System.out.println(sql.table("user").field("id,name").where(Obj(json)).select());
 
     }
 }

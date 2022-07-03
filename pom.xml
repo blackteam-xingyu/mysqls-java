@@ -3,10 +3,10 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>services.tangxin.mysqls</groupId>
     <artifactId>mysqls-java</artifactId>
-    <version>1.0.2-SNAPSHOT</version>
+    <version>1.0.3</version>
     <name>${project.groupId}:${project.artifactId}</name>
     <description>a tool for building sql</description>
-    <url>https://www.tangxin.services</url>
+    <url>https://github.com/blackteam-xingyu/mysqls-java</url>
     <licenses>
         <license>
             <name>MIT License</name>
