@@ -73,7 +73,7 @@ public class UserController{
 因为spring Bean容器的特性，只会在项目初始化的时候执行一次new。此后Bean使用的是同一个地址内的对象，所以仅仅调用一次init方法就可以完成所有的业务。避免了需要访问数据库时反复调用init方法初始化所造成的性能损耗。
 
 ## MySQLS配置初始化
-> 无需使用该插件直接调用数据库的使用者，请直接跳过该步骤。
+> 无需使用该插件的sql语句运行功能的使用者，请直接跳过该步骤，直接用生成的sql语句去整合Mybatis。
 
 ### 1、使用Config类
 ```java
@@ -174,8 +174,8 @@ public class MySQLSConfig {
 //...
 String json = "{'id':1}";
 //链式调用生成sql语句
-String sqlStr = sql.table("user").field("id,name").where(Obj(json)).select();
-log.info(sqlStr);
+String sql = sql.table("user").field("id,name").where(Obj(json)).select();
+log.info(sql);
 /*2022-07-03 16:05:41.395 -- [main] INFO  com.spring.mytest.MytestApplicationTests.testMysqls - 
 SELECT  id,name FROM user WHERE id=1*/  
 //...
@@ -185,9 +185,8 @@ SELECT  id,name FROM user WHERE id=1*/
 ```java
 //...
 String json = "{'id':1}";
-String sqlStr=sql.table("user").field("id,name").where(Obj(json)).select();
 //调用exec执行语句返回查询结果
-sql.exec(sqlStr);
+String sql=sql.table("user").field("id,name").where(Obj(json)).select();sql.exec(sql);
 //...
 ```
 
@@ -208,6 +207,7 @@ sql.transaction(sql1,sql2);
 
 **查询**
 ```java
+MySQLS sql = new MySQLS();
 sql
 	.table('user')
 	.field('id,name')
@@ -218,6 +218,7 @@ sql
 
 **插入**
 ```java
+MySQLS sql = new MySQLS();
 sql
     .table('user')
     .data(Obj("{'name':'zhangsan','email':'fwkt@qq.com'}"))
@@ -254,8 +255,7 @@ sql
 
 **删除**
 ```java
-sql 
-	.table('user')
+sql .table('user')
     .where(Obj("{'name':'zhangsan'}"))
     .delet();
 
