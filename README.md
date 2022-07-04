@@ -314,7 +314,7 @@ sql.table('user').where(Arr(data)).select();
 sql
     .union('SELECT * FROM think_user_1',true)
     .union('SELECT * FROM think_user_2',true)
-    .union(Arr"['SELECT * FROM think_user_3','SELECT name FROM think_user_4']")
+    .union(Arr("['SELECT * FROM think_user_3','SELECT name FROM think_user_4']"))
     .union('SELECT * FROM think_user_5',true)
     .select();
     
